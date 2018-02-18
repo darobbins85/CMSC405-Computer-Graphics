@@ -1,0 +1,431 @@
+<html>
+    <head>
+        <title>Project 3</title>
+
+        <style>
+
+            body {
+              margin: 0;
+              background-image: 'img/nature background.jpg';
+            }
+
+            canvas {
+              width: 100%; height: 100%;
+            }
+
+            #navbar{
+              width:100%;
+              list-style:none;
+              padding-top:30px;
+              position: fixed;
+            }
+
+            #navbar .name{
+              float:left;
+              font-size:36px;
+              text-shadow: 1px 2px #545454;
+              padding-left: 20px;
+              color: #999900;
+            }
+
+            #navbar li{
+              text-align:right;
+              padding-top:5px;
+              padding-right:40px;
+            }
+
+            #navbar li ul{
+              display:inline-block;
+              margin-top:18px;
+            }
+
+            #navbar li ul button{
+              float:right;
+              text-align:center;
+              border-radius:10px;
+              padding:5px;
+              margin:-12px;
+              text-decoration:none;
+              background-color: #545454;
+            }
+
+            #navbar li ul button:hover{
+              background-color:#999900;
+            }
+
+        </style>
+    </head>
+
+    <body>
+
+<!--                  NAVIGATION BAR AND SCRIPT SOURCES                      -->
+
+        <nav id="navbar">
+          <div class="container">
+            <div class="name">David Robbins - Project 3</div>
+            <div>
+              <li>
+                <ul><button id="party" type="submit">Party</button></ul>
+                <ul><button id="lathe">Lathe</button></ul>
+                <ul><button id="knot">Knot</button></ul>
+                <ul><button id="sphere">Sphere</button></ul>
+                <ul><button id="cube">Cube</button></ul>
+                <ul><button id="tube">Tube</button></ul>
+                <ul><button id="plane">Phantom Zone</button></ul>
+              </li>
+            </div>
+          </div>
+        </nav>
+
+        <script src="js/three.js"></script>
+        <script src="js/OrbitControls.js"></script>
+
+        <script>
+
+/*----------------SCENE, RENDER, CAMERA SETUP AND WINDOW RESIZING-------------*/
+
+            var scene = new THREE.Scene();
+            var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            var renderer = new THREE.WebGLRenderer();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            // handle resizing of window
+            window.addEventListener('resize', function()
+            {
+                var width = window.innerWidth;
+                var height = window.innerHeight;
+                renderer.setSize(width, height);
+                camera.aspect = width/height;
+                camera.updateProjectionMatrix();
+            });
+
+            // position camera
+            camera.position.z = 7;
+
+            // control with mouse zoom, rotate, and pan
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+//--------------------------------LIGHTING-------------------------------------
+
+            // ambient
+            var ambientLight = new THREE.AmbientLight(0x000000);
+            scene.add(ambientLight);
+
+            // point
+            var lights = [];
+            lights[0] = new THREE.PointLight(0xFFFFFF, 1, 0);
+            lights[1] = new THREE.PointLight(0xFFFFFF, 1, 0);
+            lights[2] = new THREE.PointLight(0xFFFFFF, 1, 0);
+
+            lights[0].position.set(0, 200, 0);
+            lights[1].position.set(100, 200, 100);
+            lights[2].position.set(-100, -200, -100);
+
+            scene.add(lights[0]);
+            scene.add(lights[1]);
+            scene.add(lights[2]);
+
+            // directional
+            var directionalLight = new THREE.DirectionalLight(0xFFFFFF, 1);
+            directionalLight.position.set(0,1,0);
+            scene.add(directionalLight);
+
+//--------------------CREATE SHAPES AND ADD THEM TO SCENE-----------------------
+
+            // cube
+            var cubeGeo = new THREE.BoxGeometry(1,1,1);
+            var cubeMat = new THREE.MeshLambertMaterial({
+              color: 0x000CFF,
+              emissive: 0x072534,
+              side: THREE.DoubleSide,
+              flatShading: true
+            });
+            var cube = new THREE.Mesh(cubeGeo, cubeMat);
+
+            // knotted torus
+            var knotGeo = new THREE.TorusKnotGeometry(.5,.1,1000,16);
+            var knotMat = new THREE.MeshLambertMaterial({
+              color: 0x1FFF00,
+              emissive: 0x072534,
+              side: THREE.DoubleSide,
+              flatShading: true
+            });
+            var knot = new THREE.Mesh(knotGeo, knotMat);
+
+            // sphere
+            var sphereGeo = new THREE.SphereGeometry(.5, 32, 32);
+            var sphereMat = new THREE.MeshPhongMaterial({
+              color: 0xD8D9DA,
+              emissive: 0x072534,
+              side: THREE.DoubleSide,
+              flatShading: true
+            });
+            var sphere = new THREE.Mesh(sphereGeo, sphereMat);
+
+            // lathe
+            var points = [];
+            for ( var i = 0; i < 15; i ++ ) {
+            	points.push( new THREE.Vector2( Math.sin( i * 0.2 ) * 10 + 5, ( i - 5 ) * 2 ) );
+            }
+            var latheGeo = new THREE.LatheGeometry(points);
+            var latheMat = new THREE.MeshLambertMaterial({
+              color: 0xB73FCD,
+              emissive: 0x072534,
+              side: THREE.DoubleSide,
+              flatShading: true
+            });
+            var lathe = new THREE.Mesh(latheGeo, latheMat);
+            lathe.scale.set(.05,.05,.05);
+
+            // tube
+            function CustomSinCurve( scale ) {
+            	THREE.Curve.call( this );
+            	this.scale = ( scale === undefined ) ? 1 : scale;
+            }
+
+            CustomSinCurve.prototype = Object.create( THREE.Curve.prototype );
+            CustomSinCurve.prototype.constructor = CustomSinCurve;
+            CustomSinCurve.prototype.getPoint = function ( t ) {
+            	var tx = t * 3 - 1.5;
+            	var ty = Math.sin( 2 * Math.PI * t );
+            	var tz = 0;
+            	return new THREE.Vector3( tx, ty, tz ).multiplyScalar( this.scale );
+            };
+
+            var path = new CustomSinCurve( 10 );
+            var tubeGeo = new THREE.TubeGeometry( path, 20, 2, 8, false );
+            var tubeMat = new THREE.MeshLambertMaterial({
+              color: 0xFFF700,
+              emissive: 0x072534,
+              side: THREE.DoubleSide,
+              flatShading: true
+            });
+            var tube = new THREE.Mesh(tubeGeo, tubeMat);
+            tube.scale.set(.05,.05,.05);
+
+            // plane
+            var planeMat = [
+                new THREE.MeshBasicMaterial({map:THREE.ImageUtils.loadTexture('img/hands.jpg'), side: THREE.DoubleSide}), // right side
+                new THREE.MeshBasicMaterial({map:THREE.ImageUtils.loadTexture('img/hands.jpg'), side: THREE.DoubleSide}), // left side
+            ];
+            planeMat.map.needsUpdate = true;
+            var planeGeo = new THREE.PlaneGeometry(1, 1, 1);
+            var plane = new THREE.Mesh(planeGeo, planeMat);
+
+            // text
+            var text;
+            var loader = new THREE.FontLoader();
+            var font = loader.load('font/helvetiker_regular.typeface.json', function(font){
+              var textGeo = new THREE.TextGeometry('Shape Party!!!',{
+                font: font,
+            		size: .7,
+            		height: .1,
+              });
+              var textMat = new THREE.MeshLambertMaterial({
+                color: 0xFF0000,
+                emissive: 0x072534,
+                side: THREE.DoubleSide,
+                flatShading: true
+              });
+              text = new THREE.Mesh(textGeo, textMat);
+              // add to scene from within var font
+              text.position.set(-3, 2.2, 0);
+              scene.add(text);
+            });
+
+              scene.add(cube);
+              scene.add(knot);
+              scene.add(sphere);
+              scene.add(lathe);
+              scene.add(tube);
+              scene.add(plane);
+
+//---------------------------TRANSFORMS FUNCTIONS-------------------------------
+
+            var positionShapes = function(){
+                cube.position.set(2, -6.5, 0);
+                cube.scale.set(1,1,1);
+                cube.rotation.set(0, 0, 0);
+
+                knot.position.set(-2, -6.5, 0);
+                knot.scale.set(1,1,1);
+                knot.rotation.set(0, 0, 0);
+
+                sphere.position.set(0, -6, 0);
+                sphere.scale.set(1,1,1);
+                sphere.rotation.set(0, 0, 0);
+
+                lathe.position.set(-4.2, -7.5, 0);
+                lathe.scale.set(.05,.05,.05);
+                lathe.rotation.set(0, 0, 0);
+
+                tube.position.set(4.2, -7.5, 0);
+                tube.scale.set(.05,.05,.05);
+                tube.rotation.set(0, 0, 0);
+
+                plane.position.set(0, -7.5, 0);
+                plane.scale.set(1,1,1);
+                plane.rotation.set(0, 0, 0);
+            }
+
+            positionShapes();
+
+            var scaleDown = function(){
+              knot.scale.set(0,0,0);
+              sphere.scale.set(0,0,0)
+              plane.scale.set(0,0,0)
+              cube.scale.set(0,0,0)
+              tube.scale.set(0,0,0)
+              text.scale.set(0,0,0);
+              lathe.scale.set(0,0,0);
+            }
+
+//-----------------HANDLING UPDATE FUNCTION FOR BUTTON CLICKS-------------------
+
+            // intializing and redefining update() for button clicks
+            var update = function(){};
+
+            // action for Party button click
+            document.getElementById("party").onclick = function(){
+              positionShapes();
+              update = function(){
+                // rotations
+                sphere.rotation.y += 0.01;
+
+                // translations
+                if(sphere.position.y < 1.3){
+                knot.translateY(.03);
+                sphere.translateY(.03);
+                cube.translateY(.03);
+                lathe.translateY(.03);
+                tube.translateY(.03);
+                plane.translateY(.03);
+
+                // Party title
+                text.scale.set(1, 1, 1);
+                }
+
+                if(sphere.position.y > 1.3){
+
+                  if(sphere.position.y > -3){
+                    knot.translateX(-.03);
+                    knot.translateY(-.06);
+
+                    cube.translateX(.03);
+                    cube.translateY(-.06);
+
+                    lathe.translateX(-.03);
+                    lathe.translateY(-.03);
+
+                    tube.translateX(.03);
+                    tube.translateY(-.03);
+
+                    plane.translateY(-.06);
+
+                    sphere.scale.x -= .0038;
+                    sphere.scale.y -= .0038;
+                    sphere.scale.z -= .0038;
+
+                  }
+
+                  if(knot.position.y < -15){
+                    positionShapes();
+                  }
+                }
+              }
+            }
+
+            // action for Lathe button clicks
+            document.getElementById('lathe').onclick = function(){
+              scaleDown();
+              update = function(){
+                lathe.position.set(0,0,0);
+                lathe.rotation.x += .01;
+                lathe.rotation.y += .01;
+                lathe.rotation.z += .01;
+                lathe.scale.set(.1, .1, .1);
+              }
+            }
+
+            // action for Knot button clicks
+            document.getElementById('knot').onclick = function(){
+              scaleDown();
+              update = function(){
+                knot.position.set(0,0,0);
+                knot.rotation.x += .01;
+                knot.rotation.y += .01;
+                knot.rotation.z += .01;
+                knot.scale.set(2, 2, 2);
+              }
+            }
+
+            // action for Sphere button clicks
+            document.getElementById('sphere').onclick = function(){
+              scaleDown();
+              update = function(){
+                sphere.position.set(0,0,0);
+                sphere.rotation.x += .01;
+                sphere.rotation.y += .01;
+                sphere.rotation.z += .01;
+                sphere.scale.set(3, 3, 3);
+              }
+            }
+
+            // action for Cube button click
+            document.getElementById('cube').onclick = function(){
+              scaleDown();
+              update = function(){
+                cube.position.set(0,0,0);
+                cube.rotation.x += .01;
+                cube.rotation.y += .01;
+                cube.rotation.z += .01;
+                cube.scale.set(2, 2, 2);
+              }
+            }
+
+            // action for Tube button click
+            document.getElementById('tube').onclick = function(){
+              scaleDown();
+              update = function(){
+                tube.position.set(0,0,0);
+                tube.rotation.x += .01;
+                tube.rotation.y += .01;
+                tube.rotation.z += .01;
+                tube.scale.set(.1, .1, .1);
+              }
+            }
+
+            // action for Phantom Plane button click
+            document.getElementById('plane').onclick = function(){
+              scaleDown();
+              update = function(){
+                plane.position.set(0,0,0);
+                plane.rotation.x += .01;
+                plane.rotation.y += .01;
+                plane.rotation.z += .01;
+                plane.scale.set(3, 3, 3);
+              }
+            }
+
+//---------------------------Main scene functions-------------------------------
+
+            // draw scene
+            var render = function()
+            {
+              renderer.render(scene, camera);
+            };
+
+            // run scene loop (update, render, repeat)
+            var SceneLoop = function()
+            {
+              requestAnimationFrame(SceneLoop);
+              update();
+              render();
+            };
+
+            SceneLoop();
+
+        </script>
+    </body>
+</html>
